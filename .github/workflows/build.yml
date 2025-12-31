@@ -56,13 +56,18 @@ jobs:
     - name: Prepare release files
       if: startsWith(github.ref, 'refs/tags/')
       run: |
-        mkdir -p release/${{ matrix.target }}
-        cp app/project/build_${{ matrix.target }}_hcpu/bootloader/bootloader.bin release/${{ matrix.target }}/
-        cp app/project/build_${{ matrix.target }}_hcpu/ftab/ftab.bin release/${{ matrix.target }}/
-        cp app/project/build_${{ matrix.target }}_hcpu/main.bin/ER_IROM1.bin release/${{ matrix.target }}/
-        cp app/project/build_${{ matrix.target }}_hcpu/main.bin/ER_IROM2.bin release/${{ matrix.target }}/
-        cp app/project/build_${{ matrix.target }}_hcpu/main.bin/ER_IROM3.bin release/${{ matrix.target }}/
-        # cp sftool_param.json release/${{ matrix.target }}/
+        build_dir="app/project/build_${{ matrix.target }}_hcpu"
+        release_dir="release/${{ matrix.target }}"
+
+        mkdir -p "$release_dir"
+
+        # Copy all .bin files while preserving their relative paths
+        rsync -av --prune-empty-dirs --include="*/" --include="*.bin" --exclude="*" "$build_dir/" "$release_dir/"
+
+        # Copy sftool_param.json if present
+        if [ -f "$build_dir/sftool_param.json" ]; then
+          cp "$build_dir/sftool_param.json" "$release_dir/"
+        fi
         
         # Create a zip archive for this target
         cd release
